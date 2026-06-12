@@ -1,0 +1,55 @@
+# Ambientes virtuais
+.venv/
+venv/
+IA_venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Variaveis locais e segredos
+.env
+.env.*
+!.env.example
+
+# Resultados e artefatos gerados
+resultados/
+saida/
+logs/
+*.log
+*.png
+*.jpg
+*.jpeg
+*.svg
+
+# Relatorio compilado
+relatorio/*.aux
+relatorio/*.log
+relatorio/*.out
+relatorio/*.toc
+relatorio/*.synctex.gz
+
+# Trabalho anterior usado apenas como referencia
+trabalho_av2_ia/
+
+# Enunciado local do trabalho
+Trabalho_BuscaOtimiza*_IA___2026_1.pdf
