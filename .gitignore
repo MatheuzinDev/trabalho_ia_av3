@@ -41,6 +41,10 @@ logs/
 *.jpeg
 *.svg
 
+# Plano local de desenvolvimento
+PLANO.md
+PLANO.MD
+
 # Relatorio compilado
 relatorio/*.aux
 relatorio/*.log
