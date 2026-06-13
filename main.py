@@ -17,17 +17,17 @@ from src.problemas_continuos import get_problem
 
 
 ROUNDS = 100
-VALIDATION_ROUNDS = 20
+VALIDATION_ROUNDS = 100
 MAX_ITERATIONS = 1000
 PATIENCE = 200
 MIN_VALIDATION_SUCCESS_RATE = 0.8
 SOLUTION_DECIMAL_PLACES = 2
-# Use None para execucoes aleatorias; use um inteiro para reproduzir resultados.
+# use None para execução Use None para execucoes aleatorias; use um inteiro para reproduzir resultados.
 RANDOM_SEED = None
 SELECTED_PROBLEM_ID = "problema2"
 
-EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10.0)
-SIGMA_VALUES = (0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5)
+EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0)
+SIGMA_VALUES = (0.001, 0.0025, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.25, 0.5)
 
 
 def main():
