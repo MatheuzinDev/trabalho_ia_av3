@@ -59,6 +59,16 @@ def objective_problem_4(candidate):
     return float(first_term + second_term)
 
 
+def objective_problem_5(candidate):
+    x = np.asarray(candidate, dtype=float)
+    x1 = x[0]
+    x2 = x[1]
+    first_term = (x1 * np.cos(x1)) / 20.0
+    second_term = 2.0 * np.exp(-(x1**2) - ((x2 - 1.0) ** 2))
+    third_term = 0.01 * x1 * x2
+    return float(first_term + second_term + third_term)
+
+
 PROBLEMS = {
     "problema1": ContinuousProblem(
         problem_id="problema1",
@@ -105,6 +115,18 @@ PROBLEMS = {
         target_value=1e-1,
         optimum_point=np.array([0.0, 0.0], dtype=float),
         optimum_value=0.0,
+        zoom_limit=1.0,
+        patience=1000,
+    ),
+    "problema5": ContinuousProblem(
+        problem_id="problema5",
+        name="Problema 5 - Funcao exponencial com termo oscilatorio",
+        objective_function=objective_problem_5,
+        bounds=np.array([[-10.0, 10.0], [-10.0, 10.0]], dtype=float),
+        minimize=False,
+        target_value=2.0,
+        optimum_point=np.array([0.015, 1.00004], dtype=float),
+        optimum_value=2.000449969049,
         zoom_limit=1.0,
         patience=1000,
     ),
