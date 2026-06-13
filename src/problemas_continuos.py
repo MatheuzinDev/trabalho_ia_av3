@@ -14,6 +14,8 @@ class ContinuousProblem:
         optimum_value,
         zoom_limit,
         patience,
+        epsilon_values,
+        sigma_values,
     ):
         self.problem_id = problem_id
         self.name = name
@@ -25,6 +27,8 @@ class ContinuousProblem:
         self.optimum_value = optimum_value
         self.zoom_limit = zoom_limit
         self.patience = patience
+        self.epsilon_values = tuple(float(value) for value in epsilon_values)
+        self.sigma_values = tuple(float(value) for value in sigma_values)
 
 
 def objective_problem_1(candidate):
@@ -81,6 +85,8 @@ PROBLEMS = {
         optimum_value=0.0,
         zoom_limit=1.0,
         patience=200,
+        epsilon_values=(0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0),
+        sigma_values=(0.001, 0.0025, 0.005, 0.01, 0.02, 0.05, 0.1),
     ),
     "problema2": ContinuousProblem(
         problem_id="problema2",
@@ -93,6 +99,8 @@ PROBLEMS = {
         optimum_value=2.0,
         zoom_limit=1.0,
         patience=200,
+        epsilon_values=(0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0),
+        sigma_values=(0.005, 0.01, 0.02, 0.025, 0.03, 0.04, 0.05, 0.075, 0.1),
     ),
     "problema3": ContinuousProblem(
         problem_id="problema3",
@@ -105,6 +113,8 @@ PROBLEMS = {
         optimum_value=0.0,
         zoom_limit=1.0,
         patience=1000,
+        epsilon_values=(0.1, 0.25, 0.5, 0.75, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0, 3.0),
+        sigma_values=(0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.075, 0.1),
     ),
     "problema4": ContinuousProblem(
         problem_id="problema4",
@@ -117,6 +127,8 @@ PROBLEMS = {
         optimum_value=0.0,
         zoom_limit=1.0,
         patience=1000,
+        epsilon_values=(0.75, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.25, 1.5, 2.0, 3.0, 5.0),
+        sigma_values=(0.025, 0.03, 0.04, 0.045, 0.05, 0.055, 0.06, 0.075, 0.1, 0.15, 0.25),
     ),
     "problema5": ContinuousProblem(
         problem_id="problema5",
@@ -129,6 +141,8 @@ PROBLEMS = {
         optimum_value=2.000449969049,
         zoom_limit=1.0,
         patience=1000,
+        epsilon_values=(0.1, 1.0, 3.0, 5.0, 10.0, 12.0, 15.0, 18.0, 20.0),
+        sigma_values=(0.0005, 0.00075, 0.001, 0.0015, 0.002, 0.0025, 0.003, 0.004, 0.005, 0.0075, 0.01, 0.015, 0.02, 0.04, 0.05),
     ),
 }
 

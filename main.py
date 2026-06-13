@@ -38,9 +38,6 @@ SELECTED_PROBLEM_ID = "problema5"
 SHOW_PROGRESS = True
 PROGRESS_INTERVAL = 10
 
-EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0, 12.0, 15.0)
-SIGMA_VALUES = (0.0005, 0.00075, 0.001, 0.0015, 0.002, 0.0025, 0.003, 0.004, 0.005, 0.0075, 0.01, 0.0125, 0.015, 0.02, 0.025, 0.03, 0.04, 0.045, 0.05, 0.055, 0.06, 0.075, 0.1, 0.15, 0.25, 0.5)
-
 
 def main():
     total_start_time = time.perf_counter()
@@ -130,14 +127,14 @@ def select_hill_climbing_epsilon(problem):
     if SHOW_PROGRESS:
         print_phase_header(1, 4, "Validacao do Hill Climbing")
 
-    for value_index, epsilon in enumerate(EPSILON_VALUES):
+    for value_index, epsilon in enumerate(problem.epsilon_values):
         rng = create_rng(RANDOM_SEED, 1000 + value_index)
         results = run_hill_climbing_rounds(problem, epsilon, rng, rounds=VALIDATION_ROUNDS)
         record = build_hyperparameter_record(problem, "Hill Climbing", "epsilon", epsilon, results)
         records.append(record)
 
         if SHOW_PROGRESS:
-            print_validation_progress("epsilon", epsilon, record, value_index + 1, len(EPSILON_VALUES), phase_start_time)
+            print_validation_progress("epsilon", epsilon, record, value_index + 1, len(problem.epsilon_values), phase_start_time)
 
     return records, select_smallest_successful_value(records, problem.minimize)
 
@@ -149,14 +146,14 @@ def select_lrs_sigma(problem):
     if SHOW_PROGRESS:
         print_phase_header(2, 4, "Validacao do Local Random Search")
 
-    for value_index, sigma in enumerate(SIGMA_VALUES):
+    for value_index, sigma in enumerate(problem.sigma_values):
         rng = create_rng(RANDOM_SEED, 2000 + value_index)
         results = run_lrs_rounds(problem, sigma, rng, rounds=VALIDATION_ROUNDS)
         record = build_hyperparameter_record(problem, "Local Random Search", "sigma", sigma, results)
         records.append(record)
 
         if SHOW_PROGRESS:
-            print_validation_progress("sigma", sigma, record, value_index + 1, len(SIGMA_VALUES), phase_start_time)
+            print_validation_progress("sigma", sigma, record, value_index + 1, len(problem.sigma_values), phase_start_time)
 
     return records, select_smallest_successful_value(records, problem.minimize)
 
