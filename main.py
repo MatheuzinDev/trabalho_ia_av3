@@ -2,23 +2,29 @@ from pathlib import Path
 
 import numpy as np
 
-from src.estatisticas import summarize_results, write_hyperparameter_csv, write_rounds_csv, write_summary_csv
+from src.estatisticas import (
+    count_successes,
+    summarize_results,
+    write_hyperparameter_csv,
+    write_rounds_csv_with_direction,
+    write_summary_csv,
+)
 from src.global_random_search import global_random_search
 from src.graficos import save_convergence_plot, save_final_solutions_plot, save_final_solutions_zoom_plot
 from src.hill_climbing import hill_climbing
 from src.local_random_search import local_random_search
-from src.problema1 import BOUNDS, MINIMIZE, OPTIMUM_POINT, objective_function
+from src.problemas_continuos import get_problem
 
 
 ROUNDS = 100
 VALIDATION_ROUNDS = 20
 MAX_ITERATIONS = 1000
 PATIENCE = 200
-TARGET_VALUE = 1e-2
 MIN_VALIDATION_SUCCESS_RATE = 0.8
 SOLUTION_DECIMAL_PLACES = 2
 # Use None para execucoes aleatorias; use um inteiro para reproduzir resultados.
 RANDOM_SEED = None
+SELECTED_PROBLEM_ID = "problema2"
 
 EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10.0)
 SIGMA_VALUES = (0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5)
@@ -26,28 +32,51 @@ SIGMA_VALUES = (0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5)
 
 def main():
     project_dir = Path(__file__).resolve().parent
-    output_dir = project_dir / "resultados" / "problema1"
+    problem = get_problem(SELECTED_PROBLEM_ID)
+    output_dir = project_dir / "resultados" / problem.problem_id
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    epsilon_records, selected_epsilon = select_hill_climbing_epsilon()
-    sigma_records, selected_sigma = select_lrs_sigma()
+    epsilon_records, selected_epsilon = select_hill_climbing_epsilon(problem)
+    sigma_records, selected_sigma = select_lrs_sigma(problem)
     write_hyperparameter_csv(epsilon_records + sigma_records, output_dir / "hiperparametros.csv")
 
     rng = create_rng(RANDOM_SEED)
     results_by_algorithm = {
-        "Hill Climbing": run_hill_climbing_rounds(selected_epsilon, rng),
-        "Local Random Search": run_lrs_rounds(selected_sigma, rng),
-        "Global Random Search": run_grs_rounds(rng),
+        "Hill Climbing": run_hill_climbing_rounds(problem, selected_epsilon, rng),
+        "Local Random Search": run_lrs_rounds(problem, selected_sigma, rng),
+        "Global Random Search": run_grs_rounds(problem, rng),
     }
 
-    summaries = summarize_results(results_by_algorithm, TARGET_VALUE, SOLUTION_DECIMAL_PLACES)
-    write_rounds_csv(results_by_algorithm, output_dir / "rodadas.csv", TARGET_VALUE)
+    summaries = summarize_results(
+        results_by_algorithm,
+        problem.target_value,
+        problem.minimize,
+        SOLUTION_DECIMAL_PLACES,
+    )
+    write_rounds_csv_with_direction(
+        results_by_algorithm,
+        output_dir / "rodadas.csv",
+        problem.target_value,
+        problem.minimize,
+    )
     write_summary_csv(summaries, output_dir / "resumo.csv")
-    save_convergence_plot(results_by_algorithm, output_dir / "convergencia.png")
-    save_final_solutions_plot(results_by_algorithm, OPTIMUM_POINT, BOUNDS, output_dir / "solucoes_finais.png")
-    save_final_solutions_zoom_plot(results_by_algorithm, OPTIMUM_POINT, output_dir / "solucoes_finais_zoom.png")
+    save_convergence_plot(results_by_algorithm, output_dir / "convergencia.png", problem.name)
+    save_final_solutions_plot(
+        results_by_algorithm,
+        problem.optimum_point,
+        problem.bounds,
+        output_dir / "solucoes_finais.png",
+        problem.name,
+    )
+    save_final_solutions_zoom_plot(
+        results_by_algorithm,
+        problem.optimum_point,
+        output_dir / "solucoes_finais_zoom.png",
+        problem.zoom_limit,
+        problem.name,
+    )
 
-    print_execution_summary(summaries, selected_epsilon, selected_sigma, output_dir, RANDOM_SEED)
+    print_execution_summary(problem, summaries, selected_epsilon, selected_sigma, output_dir, RANDOM_SEED)
 
 
 def create_rng(seed=None, offset=0):
@@ -56,78 +85,80 @@ def create_rng(seed=None, offset=0):
     return np.random.default_rng(seed + offset)
 
 
-def select_hill_climbing_epsilon():
+def select_hill_climbing_epsilon(problem):
     records = []
 
     for value_index, epsilon in enumerate(EPSILON_VALUES):
         rng = create_rng(RANDOM_SEED, 1000 + value_index)
-        results = run_hill_climbing_rounds(epsilon, rng, rounds=VALIDATION_ROUNDS)
-        records.append(build_hyperparameter_record("Hill Climbing", "epsilon", epsilon, results))
+        results = run_hill_climbing_rounds(problem, epsilon, rng, rounds=VALIDATION_ROUNDS)
+        records.append(build_hyperparameter_record(problem, "Hill Climbing", "epsilon", epsilon, results))
 
-    return records, select_smallest_successful_value(records)
+    return records, select_smallest_successful_value(records, problem.minimize)
 
 
-def select_lrs_sigma():
+def select_lrs_sigma(problem):
     records = []
 
     for value_index, sigma in enumerate(SIGMA_VALUES):
         rng = create_rng(RANDOM_SEED, 2000 + value_index)
-        results = run_lrs_rounds(sigma, rng, rounds=VALIDATION_ROUNDS)
-        records.append(build_hyperparameter_record("Local Random Search", "sigma", sigma, results))
+        results = run_lrs_rounds(problem, sigma, rng, rounds=VALIDATION_ROUNDS)
+        records.append(build_hyperparameter_record(problem, "Local Random Search", "sigma", sigma, results))
 
-    return records, select_smallest_successful_value(records)
+    return records, select_smallest_successful_value(records, problem.minimize)
 
 
-def run_hill_climbing_rounds(epsilon, rng, rounds=ROUNDS):
+def run_hill_climbing_rounds(problem, epsilon, rng, rounds=ROUNDS):
     return [
         hill_climbing(
-            objective_function,
-            BOUNDS,
+            problem.objective_function,
+            problem.bounds,
             epsilon,
             MAX_ITERATIONS,
             PATIENCE,
-            TARGET_VALUE,
+            problem.target_value,
             rng,
-            MINIMIZE,
+            problem.minimize,
         )
         for _ in range(rounds)
     ]
 
 
-def run_lrs_rounds(sigma, rng, rounds=ROUNDS):
+def run_lrs_rounds(problem, sigma, rng, rounds=ROUNDS):
     return [
         local_random_search(
-            objective_function,
-            BOUNDS,
+            problem.objective_function,
+            problem.bounds,
             sigma,
             MAX_ITERATIONS,
             PATIENCE,
-            TARGET_VALUE,
+            problem.target_value,
             rng,
-            MINIMIZE,
+            problem.minimize,
         )
         for _ in range(rounds)
     ]
 
 
-def run_grs_rounds(rng, rounds=ROUNDS):
+def run_grs_rounds(problem, rng, rounds=ROUNDS):
     return [
         global_random_search(
-            objective_function,
-            BOUNDS,
+            problem.objective_function,
+            problem.bounds,
             MAX_ITERATIONS,
             PATIENCE,
-            TARGET_VALUE,
+            problem.target_value,
             rng,
-            MINIMIZE,
+            problem.minimize,
         )
         for _ in range(rounds)
     ]
 
 
-def build_hyperparameter_record(algorithm, parameter_name, parameter_value, results):
+def build_hyperparameter_record(problem, algorithm, parameter_name, parameter_value, results):
     values = np.asarray([result.f_best for result in results], dtype=float)
-    success_count = int(np.sum(values <= TARGET_VALUE))
+    success_count = count_successes(values, problem.target_value, problem.minimize)
+    best_value = float(np.min(values) if problem.minimize else np.max(values))
+    worst_value = float(np.max(values) if problem.minimize else np.min(values))
 
     return {
         "algoritmo": algorithm,
@@ -138,12 +169,12 @@ def build_hyperparameter_record(algorithm, parameter_name, parameter_value, resu
         "taxa_sucesso": success_count / len(results),
         "media_f": float(np.mean(values)),
         "mediana_f": float(np.median(values)),
-        "melhor_f": float(np.min(values)),
-        "pior_f": float(np.max(values)),
+        "melhor_f": best_value,
+        "pior_f": worst_value,
     }
 
 
-def select_smallest_successful_value(records):
+def select_smallest_successful_value(records, minimize=True):
     successful_records = [
         record
         for record in records
@@ -152,17 +183,25 @@ def select_smallest_successful_value(records):
     if successful_records:
         return successful_records[0]["valor"]
 
-    best_record = min(
-        records,
-        key=lambda record: (-record["taxa_sucesso"], record["mediana_f"], record["media_f"]),
-    )
+    if minimize:
+        best_record = min(
+            records,
+            key=lambda record: (-record["taxa_sucesso"], record["mediana_f"], record["media_f"]),
+        )
+    else:
+        best_record = min(
+            records,
+            key=lambda record: (-record["taxa_sucesso"], -record["mediana_f"], -record["media_f"]),
+        )
     return best_record["valor"]
 
 
-def print_execution_summary(summaries, selected_epsilon, selected_sigma, output_dir, random_seed):
-    print("\nProblema 1 finalizado")
+def print_execution_summary(problem, summaries, selected_epsilon, selected_sigma, output_dir, random_seed):
+    print(f"\n{problem.name} finalizado")
     seed_label = "aleatoria" if random_seed is None else random_seed
     print(f"Seed utilizada: {seed_label}")
+    print(f"Tipo de otimizacao: {'minimizacao' if problem.minimize else 'maximizacao'}")
+    print(f"Valor alvo de sucesso: {problem.target_value}")
     print(f"Epsilon selecionado para Hill Climbing: {selected_epsilon}")
     print(f"Sigma selecionado para LRS: {selected_sigma}")
     print(f"Arquivos gerados em: {output_dir}")

@@ -13,7 +13,7 @@ ALGORITHM_COLORS = {
 }
 
 
-def save_convergence_plot(results_by_algorithm, output_path):
+def save_convergence_plot(results_by_algorithm, output_path, problem_name="Problema"):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     figure, ax = plt.subplots(figsize=(9, 6))
 
@@ -26,7 +26,7 @@ def save_convergence_plot(results_by_algorithm, output_path):
             label=algorithm,
         )
 
-    ax.set_title("Convergencia media - Problema 1")
+    ax.set_title(f"Convergencia media - {problem_name}")
     ax.set_xlabel("Iteracao")
     ax.set_ylabel("Melhor f(x) medio")
     ax.set_yscale("log")
@@ -37,7 +37,7 @@ def save_convergence_plot(results_by_algorithm, output_path):
     plt.close(figure)
 
 
-def save_final_solutions_plot(results_by_algorithm, optimum_point, bounds, output_path):
+def save_final_solutions_plot(results_by_algorithm, optimum_point, bounds, output_path, problem_name="Problema"):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     figure, ax = plt.subplots(figsize=(7, 7))
 
@@ -60,7 +60,7 @@ def save_final_solutions_plot(results_by_algorithm, optimum_point, bounds, outpu
         linewidths=2,
         label="Otimo conhecido",
     )
-    ax.set_title("Solucoes finais - Problema 1")
+    ax.set_title(f"Solucoes finais - {problem_name}")
     ax.set_xlabel("x1")
     ax.set_ylabel("x2")
     ax.set_xlim(bounds[0, 0], bounds[0, 1])
@@ -72,7 +72,13 @@ def save_final_solutions_plot(results_by_algorithm, optimum_point, bounds, outpu
     plt.close(figure)
 
 
-def save_final_solutions_zoom_plot(results_by_algorithm, optimum_point, output_path, zoom_limit=1.0):
+def save_final_solutions_zoom_plot(
+    results_by_algorithm,
+    optimum_point,
+    output_path,
+    zoom_limit=1.0,
+    problem_name="Problema",
+):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     figure, ax = plt.subplots(figsize=(7, 7))
     plot_order = ("Global Random Search", "Hill Climbing", "Local Random Search")
@@ -103,11 +109,11 @@ def save_final_solutions_zoom_plot(results_by_algorithm, optimum_point, output_p
         label="Otimo conhecido",
         zorder=4,
     )
-    ax.set_title("Solucoes finais com zoom - Problema 1")
+    ax.set_title(f"Solucoes finais com zoom - {problem_name}")
     ax.set_xlabel("x1")
     ax.set_ylabel("x2")
-    ax.set_xlim(-zoom_limit, zoom_limit)
-    ax.set_ylim(-zoom_limit, zoom_limit)
+    ax.set_xlim(optimum_point[0] - zoom_limit, optimum_point[0] + zoom_limit)
+    ax.set_ylim(optimum_point[1] - zoom_limit, optimum_point[1] + zoom_limit)
     ax.grid(alpha=0.3)
     ax.legend()
     figure.tight_layout()

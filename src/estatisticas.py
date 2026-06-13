@@ -10,16 +10,16 @@ def mode_solution(results, decimal_places=2):
     return np.asarray(solution, dtype=float), frequency
 
 
-def summarize_results(results_by_algorithm, target_value, decimal_places=2):
+def summarize_results(results_by_algorithm, target_value, minimize=True, decimal_places=2):
     summaries = []
 
     for algorithm, results in results_by_algorithm.items():
         values = np.asarray([result.f_best for result in results], dtype=float)
         iterations = np.asarray([result.iterations for result in results], dtype=float)
-        best_index = int(np.argmin(values))
+        best_index = int(np.argmin(values) if minimize else np.argmax(values))
         best_result = results[best_index]
         mode_x, mode_frequency = mode_solution(results, decimal_places)
-        success_count = int(np.sum(values <= target_value))
+        success_count = count_successes(values, target_value, minimize)
 
         summaries.append(
             {
@@ -47,6 +47,10 @@ def summarize_results(results_by_algorithm, target_value, decimal_places=2):
 
 
 def write_rounds_csv(results_by_algorithm, output_path, target_value):
+    write_rounds_csv_with_direction(results_by_algorithm, output_path, target_value, True)
+
+
+def write_rounds_csv_with_direction(results_by_algorithm, output_path, target_value, minimize=True):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
         "algoritmo",
@@ -78,7 +82,7 @@ def write_rounds_csv(results_by_algorithm, output_path, target_value):
                         "f": _format_float(result.f_best),
                         "iteracoes": result.iterations,
                         "parada": result.stopped_by,
-                        "sucesso": int(result.f_best <= target_value),
+                        "sucesso": int(is_success(result.f_best, target_value, minimize)),
                     }
                 )
 
@@ -121,3 +125,20 @@ def _format_optional_float(value):
 
 def _format_float(value):
     return f"{float(value):.10f}"
+
+
+def count_successes(values, target_value, minimize=True):
+    if target_value is None:
+        return 0
+    metric_values = np.asarray(values, dtype=float)
+    if minimize:
+        return int(np.sum(metric_values <= target_value))
+    return int(np.sum(metric_values >= target_value))
+
+
+def is_success(value, target_value, minimize=True):
+    if target_value is None:
+        return False
+    if minimize:
+        return value <= target_value
+    return value >= target_value
