@@ -22,11 +22,11 @@ MAX_ITERATIONS = 1000
 PATIENCE = 200
 MIN_VALIDATION_SUCCESS_RATE = 0.8
 SOLUTION_DECIMAL_PLACES = 2
-# use None para execução Use None para execucoes aleatorias; use um inteiro para reproduzir resultados.
+# use None para execuções aleatórios ou use um inteiro para reproduzir sempre os mesmos resultados
 RANDOM_SEED = None
-SELECTED_PROBLEM_ID = "problema2"
+SELECTED_PROBLEM_ID = "problema3"
 
-EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0)
+EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0)
 SIGMA_VALUES = (0.001, 0.0025, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.25, 0.5)
 
 
@@ -114,7 +114,7 @@ def run_hill_climbing_rounds(problem, epsilon, rng, rounds=ROUNDS):
             problem.bounds,
             epsilon,
             MAX_ITERATIONS,
-            PATIENCE,
+            problem.patience,
             problem.target_value,
             rng,
             problem.minimize,
@@ -130,7 +130,7 @@ def run_lrs_rounds(problem, sigma, rng, rounds=ROUNDS):
             problem.bounds,
             sigma,
             MAX_ITERATIONS,
-            PATIENCE,
+            problem.patience,
             problem.target_value,
             rng,
             problem.minimize,
@@ -145,7 +145,7 @@ def run_grs_rounds(problem, rng, rounds=ROUNDS):
             problem.objective_function,
             problem.bounds,
             MAX_ITERATIONS,
-            PATIENCE,
+            problem.patience,
             problem.target_value,
             rng,
             problem.minimize,
@@ -202,6 +202,7 @@ def print_execution_summary(problem, summaries, selected_epsilon, selected_sigma
     print(f"Seed utilizada: {seed_label}")
     print(f"Tipo de otimizacao: {'minimizacao' if problem.minimize else 'maximizacao'}")
     print(f"Valor alvo de sucesso: {problem.target_value}")
+    print(f"Patience: {problem.patience}")
     print(f"Epsilon selecionado para Hill Climbing: {selected_epsilon}")
     print(f"Sigma selecionado para LRS: {selected_sigma}")
     print(f"Arquivos gerados em: {output_dir}")
