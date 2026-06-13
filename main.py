@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 
 import numpy as np
 
@@ -13,6 +14,15 @@ from src.global_random_search import global_random_search
 from src.graficos import save_convergence_plot, save_final_solutions_plot, save_final_solutions_zoom_plot
 from src.hill_climbing import hill_climbing
 from src.local_random_search import local_random_search
+from src.progresso import (
+    format_duration,
+    print_file_step,
+    print_phase_header,
+    print_round_progress,
+    print_run_header,
+    print_validation_progress,
+    should_report_progress,
+)
 from src.problemas_continuos import get_problem
 
 
@@ -25,26 +35,33 @@ SOLUTION_DECIMAL_PLACES = 2
 # use None para execuções aleatórios ou use um inteiro para reproduzir sempre os mesmos resultados
 RANDOM_SEED = None
 SELECTED_PROBLEM_ID = "problema3"
+SHOW_PROGRESS = True
+PROGRESS_INTERVAL = 10
 
 EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0)
 SIGMA_VALUES = (0.001, 0.0025, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.25, 0.5)
 
 
 def main():
+    total_start_time = time.perf_counter()
     project_dir = Path(__file__).resolve().parent
     problem = get_problem(SELECTED_PROBLEM_ID)
     output_dir = project_dir / "resultados" / problem.problem_id
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if SHOW_PROGRESS:
+        print_run_header(problem, ROUNDS, VALIDATION_ROUNDS, MAX_ITERATIONS, RANDOM_SEED)
+
     epsilon_records, selected_epsilon = select_hill_climbing_epsilon(problem)
     sigma_records, selected_sigma = select_lrs_sigma(problem)
-    write_hyperparameter_csv(epsilon_records + sigma_records, output_dir / "hiperparametros.csv")
 
+    if SHOW_PROGRESS:
+        print_phase_header(3, 4, "Execucao final dos algoritmos")
     rng = create_rng(RANDOM_SEED)
     results_by_algorithm = {
-        "Hill Climbing": run_hill_climbing_rounds(problem, selected_epsilon, rng),
-        "Local Random Search": run_lrs_rounds(problem, selected_sigma, rng),
-        "Global Random Search": run_grs_rounds(problem, rng),
+        "Hill Climbing": run_hill_climbing_rounds(problem, selected_epsilon, rng, show_progress=SHOW_PROGRESS),
+        "Local Random Search": run_lrs_rounds(problem, selected_sigma, rng, show_progress=SHOW_PROGRESS),
+        "Global Random Search": run_grs_rounds(problem, rng, show_progress=SHOW_PROGRESS),
     }
 
     summaries = summarize_results(
@@ -53,14 +70,31 @@ def main():
         problem.minimize,
         SOLUTION_DECIMAL_PLACES,
     )
+
+    if SHOW_PROGRESS:
+        print_phase_header(4, 4, "Geracao dos arquivos")
+        print_file_step("Salvando hiperparametros.csv")
+    write_hyperparameter_csv(epsilon_records + sigma_records, output_dir / "hiperparametros.csv")
+
+    if SHOW_PROGRESS:
+        print_file_step("Salvando rodadas.csv")
     write_rounds_csv_with_direction(
         results_by_algorithm,
         output_dir / "rodadas.csv",
         problem.target_value,
         problem.minimize,
     )
+
+    if SHOW_PROGRESS:
+        print_file_step("Salvando resumo.csv")
     write_summary_csv(summaries, output_dir / "resumo.csv")
+
+    if SHOW_PROGRESS:
+        print_file_step("Salvando convergencia.png")
     save_convergence_plot(results_by_algorithm, output_dir / "convergencia.png", problem.name)
+
+    if SHOW_PROGRESS:
+        print_file_step("Salvando solucoes_finais.png")
     save_final_solutions_plot(
         results_by_algorithm,
         problem.optimum_point,
@@ -68,6 +102,9 @@ def main():
         output_dir / "solucoes_finais.png",
         problem.name,
     )
+
+    if SHOW_PROGRESS:
+        print_file_step("Salvando solucoes_finais_zoom.png")
     save_final_solutions_zoom_plot(
         results_by_algorithm,
         problem.optimum_point,
@@ -76,7 +113,8 @@ def main():
         problem.name,
     )
 
-    print_execution_summary(problem, summaries, selected_epsilon, selected_sigma, output_dir, RANDOM_SEED)
+    total_seconds = time.perf_counter() - total_start_time
+    print_execution_summary(problem, summaries, selected_epsilon, selected_sigma, output_dir, RANDOM_SEED, total_seconds)
 
 
 def create_rng(seed=None, offset=0):
@@ -87,29 +125,48 @@ def create_rng(seed=None, offset=0):
 
 def select_hill_climbing_epsilon(problem):
     records = []
+    phase_start_time = time.perf_counter()
+
+    if SHOW_PROGRESS:
+        print_phase_header(1, 4, "Validacao do Hill Climbing")
 
     for value_index, epsilon in enumerate(EPSILON_VALUES):
         rng = create_rng(RANDOM_SEED, 1000 + value_index)
         results = run_hill_climbing_rounds(problem, epsilon, rng, rounds=VALIDATION_ROUNDS)
-        records.append(build_hyperparameter_record(problem, "Hill Climbing", "epsilon", epsilon, results))
+        record = build_hyperparameter_record(problem, "Hill Climbing", "epsilon", epsilon, results)
+        records.append(record)
+
+        if SHOW_PROGRESS:
+            print_validation_progress("epsilon", epsilon, record, value_index + 1, len(EPSILON_VALUES), phase_start_time)
 
     return records, select_smallest_successful_value(records, problem.minimize)
 
 
 def select_lrs_sigma(problem):
     records = []
+    phase_start_time = time.perf_counter()
+
+    if SHOW_PROGRESS:
+        print_phase_header(2, 4, "Validacao do Local Random Search")
 
     for value_index, sigma in enumerate(SIGMA_VALUES):
         rng = create_rng(RANDOM_SEED, 2000 + value_index)
         results = run_lrs_rounds(problem, sigma, rng, rounds=VALIDATION_ROUNDS)
-        records.append(build_hyperparameter_record(problem, "Local Random Search", "sigma", sigma, results))
+        record = build_hyperparameter_record(problem, "Local Random Search", "sigma", sigma, results)
+        records.append(record)
+
+        if SHOW_PROGRESS:
+            print_validation_progress("sigma", sigma, record, value_index + 1, len(SIGMA_VALUES), phase_start_time)
 
     return records, select_smallest_successful_value(records, problem.minimize)
 
 
-def run_hill_climbing_rounds(problem, epsilon, rng, rounds=ROUNDS):
-    return [
-        hill_climbing(
+def run_hill_climbing_rounds(problem, epsilon, rng, rounds=ROUNDS, show_progress=False):
+    results = []
+    start_time = time.perf_counter()
+
+    for round_index in range(1, rounds + 1):
+        result = hill_climbing(
             problem.objective_function,
             problem.bounds,
             epsilon,
@@ -119,13 +176,20 @@ def run_hill_climbing_rounds(problem, epsilon, rng, rounds=ROUNDS):
             rng,
             problem.minimize,
         )
-        for _ in range(rounds)
-    ]
+        results.append(result)
+
+        if show_progress and should_report_progress(round_index, rounds, PROGRESS_INTERVAL):
+            print_round_progress("Hill Climbing", round_index, rounds, results, problem.target_value, problem.minimize, start_time)
+
+    return results
 
 
-def run_lrs_rounds(problem, sigma, rng, rounds=ROUNDS):
-    return [
-        local_random_search(
+def run_lrs_rounds(problem, sigma, rng, rounds=ROUNDS, show_progress=False):
+    results = []
+    start_time = time.perf_counter()
+
+    for round_index in range(1, rounds + 1):
+        result = local_random_search(
             problem.objective_function,
             problem.bounds,
             sigma,
@@ -135,13 +199,20 @@ def run_lrs_rounds(problem, sigma, rng, rounds=ROUNDS):
             rng,
             problem.minimize,
         )
-        for _ in range(rounds)
-    ]
+        results.append(result)
+
+        if show_progress and should_report_progress(round_index, rounds, PROGRESS_INTERVAL):
+            print_round_progress("Local Random Search", round_index, rounds, results, problem.target_value, problem.minimize, start_time)
+
+    return results
 
 
-def run_grs_rounds(problem, rng, rounds=ROUNDS):
-    return [
-        global_random_search(
+def run_grs_rounds(problem, rng, rounds=ROUNDS, show_progress=False):
+    results = []
+    start_time = time.perf_counter()
+
+    for round_index in range(1, rounds + 1):
+        result = global_random_search(
             problem.objective_function,
             problem.bounds,
             MAX_ITERATIONS,
@@ -150,8 +221,12 @@ def run_grs_rounds(problem, rng, rounds=ROUNDS):
             rng,
             problem.minimize,
         )
-        for _ in range(rounds)
-    ]
+        results.append(result)
+
+        if show_progress and should_report_progress(round_index, rounds, PROGRESS_INTERVAL):
+            print_round_progress("Global Random Search", round_index, rounds, results, problem.target_value, problem.minimize, start_time)
+
+    return results
 
 
 def build_hyperparameter_record(problem, algorithm, parameter_name, parameter_value, results):
@@ -196,7 +271,7 @@ def select_smallest_successful_value(records, minimize=True):
     return best_record["valor"]
 
 
-def print_execution_summary(problem, summaries, selected_epsilon, selected_sigma, output_dir, random_seed):
+def print_execution_summary(problem, summaries, selected_epsilon, selected_sigma, output_dir, random_seed, total_seconds):
     print(f"\n{problem.name} finalizado")
     seed_label = "aleatoria" if random_seed is None else random_seed
     print(f"Seed utilizada: {seed_label}")
@@ -205,6 +280,7 @@ def print_execution_summary(problem, summaries, selected_epsilon, selected_sigma
     print(f"Patience: {problem.patience}")
     print(f"Epsilon selecionado para Hill Climbing: {selected_epsilon}")
     print(f"Sigma selecionado para LRS: {selected_sigma}")
+    print(f"Tempo total: {format_duration(total_seconds)}")
     print(f"Arquivos gerados em: {output_dir}")
 
     for summary in summaries:
