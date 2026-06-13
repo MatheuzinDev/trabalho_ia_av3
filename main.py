@@ -34,12 +34,12 @@ MIN_VALIDATION_SUCCESS_RATE = 0.8
 SOLUTION_DECIMAL_PLACES = 2
 # use None para execuções aleatórios ou use um inteiro para reproduzir sempre os mesmos resultados
 RANDOM_SEED = None
-SELECTED_PROBLEM_ID = "problema3"
+SELECTED_PROBLEM_ID = "problema4"
 SHOW_PROGRESS = True
 PROGRESS_INTERVAL = 10
 
-EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0)
-SIGMA_VALUES = (0.001, 0.0025, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.25, 0.5)
+EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0)
+SIGMA_VALUES = (0.001, 0.0025, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.045, 0.05, 0.055, 0.06, 0.075, 0.1, 0.15, 0.25, 0.5)
 
 
 def main():

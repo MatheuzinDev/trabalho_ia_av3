@@ -50,6 +50,15 @@ def objective_problem_3(candidate):
     return float(first_term + second_term + 20.0 + np.e)
 
 
+def objective_problem_4(candidate):
+    x = np.asarray(candidate, dtype=float)
+    x1 = x[0]
+    x2 = x[1]
+    first_term = x1**2 - 10.0 * np.cos(2.0 * np.pi * x1) + 10.0
+    second_term = x2**2 - 10.0 * np.cos(2.0 * np.pi * x2) + 10.0
+    return float(first_term + second_term)
+
+
 PROBLEMS = {
     "problema1": ContinuousProblem(
         problem_id="problema1",
@@ -80,6 +89,18 @@ PROBLEMS = {
         name="Problema 3 - Funcao Ackley",
         objective_function=objective_problem_3,
         bounds=np.array([[-8.0, 8.0], [-8.0, 8.0]], dtype=float),
+        minimize=True,
+        target_value=1e-1,
+        optimum_point=np.array([0.0, 0.0], dtype=float),
+        optimum_value=0.0,
+        zoom_limit=1.0,
+        patience=1000,
+    ),
+    "problema4": ContinuousProblem(
+        problem_id="problema4",
+        name="Problema 4 - Funcao Rastrigin",
+        objective_function=objective_problem_4,
+        bounds=np.array([[-5.12, 5.12], [-5.12, 5.12]], dtype=float),
         minimize=True,
         target_value=1e-1,
         optimum_point=np.array([0.0, 0.0], dtype=float),
