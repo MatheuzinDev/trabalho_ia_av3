@@ -17,7 +17,8 @@ PATIENCE = 200
 TARGET_VALUE = 1e-2
 MIN_VALIDATION_SUCCESS_RATE = 0.8
 SOLUTION_DECIMAL_PLACES = 2
-RANDOM_SEED = 42
+# Use None para execucoes aleatorias; use um inteiro para reproduzir resultados.
+RANDOM_SEED = None
 
 EPSILON_VALUES = (0.1, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10.0)
 SIGMA_VALUES = (0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5)
@@ -32,7 +33,7 @@ def main():
     sigma_records, selected_sigma = select_lrs_sigma()
     write_hyperparameter_csv(epsilon_records + sigma_records, output_dir / "hiperparametros.csv")
 
-    rng = np.random.default_rng(RANDOM_SEED)
+    rng = create_rng(RANDOM_SEED)
     results_by_algorithm = {
         "Hill Climbing": run_hill_climbing_rounds(selected_epsilon, rng),
         "Local Random Search": run_lrs_rounds(selected_sigma, rng),
@@ -45,14 +46,20 @@ def main():
     save_convergence_plot(results_by_algorithm, output_dir / "convergencia.png")
     save_final_solutions_plot(results_by_algorithm, OPTIMUM_POINT, BOUNDS, output_dir / "solucoes_finais.png")
 
-    print_execution_summary(summaries, selected_epsilon, selected_sigma, output_dir)
+    print_execution_summary(summaries, selected_epsilon, selected_sigma, output_dir, RANDOM_SEED)
+
+
+def create_rng(seed=None, offset=0):
+    if seed is None:
+        return np.random.default_rng()
+    return np.random.default_rng(seed + offset)
 
 
 def select_hill_climbing_epsilon():
     records = []
 
     for value_index, epsilon in enumerate(EPSILON_VALUES):
-        rng = np.random.default_rng(RANDOM_SEED + 1000 + value_index)
+        rng = create_rng(RANDOM_SEED, 1000 + value_index)
         results = run_hill_climbing_rounds(epsilon, rng, rounds=VALIDATION_ROUNDS)
         records.append(build_hyperparameter_record("Hill Climbing", "epsilon", epsilon, results))
 
@@ -63,7 +70,7 @@ def select_lrs_sigma():
     records = []
 
     for value_index, sigma in enumerate(SIGMA_VALUES):
-        rng = np.random.default_rng(RANDOM_SEED + 2000 + value_index)
+        rng = create_rng(RANDOM_SEED, 2000 + value_index)
         results = run_lrs_rounds(sigma, rng, rounds=VALIDATION_ROUNDS)
         records.append(build_hyperparameter_record("Local Random Search", "sigma", sigma, results))
 
@@ -151,8 +158,10 @@ def select_smallest_successful_value(records):
     return best_record["valor"]
 
 
-def print_execution_summary(summaries, selected_epsilon, selected_sigma, output_dir):
+def print_execution_summary(summaries, selected_epsilon, selected_sigma, output_dir, random_seed):
     print("\nProblema 1 finalizado")
+    seed_label = "aleatoria" if random_seed is None else random_seed
+    print(f"Seed utilizada: {seed_label}")
     print(f"Epsilon selecionado para Hill Climbing: {selected_epsilon}")
     print(f"Sigma selecionado para LRS: {selected_sigma}")
     print(f"Arquivos gerados em: {output_dir}")
