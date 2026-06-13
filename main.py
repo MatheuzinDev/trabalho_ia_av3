@@ -4,7 +4,7 @@ import numpy as np
 
 from src.estatisticas import summarize_results, write_hyperparameter_csv, write_rounds_csv, write_summary_csv
 from src.global_random_search import global_random_search
-from src.graficos import save_convergence_plot, save_final_solutions_plot
+from src.graficos import save_convergence_plot, save_final_solutions_plot, save_final_solutions_zoom_plot
 from src.hill_climbing import hill_climbing
 from src.local_random_search import local_random_search
 from src.problema1 import BOUNDS, MINIMIZE, OPTIMUM_POINT, objective_function
@@ -45,6 +45,7 @@ def main():
     write_summary_csv(summaries, output_dir / "resumo.csv")
     save_convergence_plot(results_by_algorithm, output_dir / "convergencia.png")
     save_final_solutions_plot(results_by_algorithm, OPTIMUM_POINT, BOUNDS, output_dir / "solucoes_finais.png")
+    save_final_solutions_zoom_plot(results_by_algorithm, OPTIMUM_POINT, output_dir / "solucoes_finais_zoom.png")
 
     print_execution_summary(summaries, selected_epsilon, selected_sigma, output_dir, RANDOM_SEED)
 
