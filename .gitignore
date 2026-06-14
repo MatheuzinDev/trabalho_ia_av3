@@ -41,10 +41,6 @@ logs/
 *.jpeg
 *.svg
 
-# Plano local de desenvolvimento
-PLANO.md
-PLANO.MD
-
 # Relatorio compilado
 relatorio/*.aux
 relatorio/*.log
@@ -52,11 +48,3 @@ relatorio/*.out
 relatorio/*.toc
 relatorio/*.synctex.gz
 
-# Trabalho anterior usado apenas como referencia
-trabalho_av2_ia/
-
-# Enunciado local do trabalho
-Trabalho_BuscaOtimiza*_IA___2026_1.pdf
-
-# Relatorios locais
-relatorio*.txt
