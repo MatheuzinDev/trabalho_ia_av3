@@ -8,25 +8,19 @@ class NQueensSA:
         self.max_fitness = 28  # Para 8 rainhas: (8 * 7) / 2
         
     def initial_state(self):
-        # Representação do estado: array onde o índice é a coluna e o valor é a linha.
-        # Ex: [0, 1, 2, 3, 4, 5, 6, 7]
         state = list(range(self.n))
         random.shuffle(state)
         return state
         
     def fitness(self, state):
-        # Calcula conflitos
         h = 0
         for i in range(self.n):
             for j in range(i + 1, self.n):
-                # Se estão na mesma linha ou mesma diagonal, há conflito.
-                # Mesma coluna é impossível pela modelagem.
                 if state[i] == state[j] or abs(state[i] - state[j]) == abs(i - j):
                     h += 1
         return self.max_fitness - h
         
     def get_neighbor(self, state):
-        # Perturbação: Escolhe uma coluna aleatória e altera sua linha
         neighbor = copy.deepcopy(state)
         col = random.randint(0, self.n - 1)
         new_row = random.randint(0, self.n - 1)
@@ -54,7 +48,6 @@ class NQueensSA:
             
             delta_fit = neighbor_fit - current_fit
             
-            # Maximização: se delta > 0, vizinho é melhor
             if delta_fit > 0 or random.random() < math.exp(delta_fit / temp):
                 current_state = neighbor
                 current_fit = neighbor_fit
@@ -78,7 +71,6 @@ def buscar_92_solucoes():
     
     while len(solutions) < 92:
         runs += 1
-        # Parâmetros agressivos para encontrar diferentes ótimos rapidamente
         state, fit, iters = solver.simulated_annealing(initial_temp=100, cooling_rate=0.95, min_temp=0.001, max_iter=5000)
         total_iterations += iters
         

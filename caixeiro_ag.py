@@ -8,29 +8,38 @@ class Indiv:
         self.chromosome = chromosome
         self.fitness = 0.0
 
-def load_data(filename, n_points=40):
+def load_data(filename="CaixeiroGruposGA.csv", group_id=3.0):
     points = []
+    origin = None
     try:
         with open(filename, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
-            header = next(reader, None)
+            idx = 1
             for row in reader:
                 if len(row) >= 4:
-                    points.append({
-                        'id': row[0],
-                        'x': float(row[1]),
-                        'y': float(row[2]),
-                        'z': float(row[3])
-                    })
+                    x = float(row[0])
+                    y = float(row[1])
+                    z = float(row[2])
+                    grp = float(row[3])
+                    if grp == 0.0:
+                        origin = {
+                            'id': 'Origem',
+                            'x': x,
+                            'y': y,
+                            'z': z
+                        }
+                    elif grp == group_id:
+                        points.append({
+                            'id': f"P{idx}",
+                            'x': x,
+                            'y': y,
+                            'z': z
+                        })
+                        idx += 1
     except FileNotFoundError:
-        print(f"Arquivo {filename} não encontrado. Gerando {n_points} pontos aleatórios para simulação.")
-        points.append({
-            'id': 'Origem',
-            'x': 0.0,
-            'y': 0.0,
-            'z': 0.0
-        })
-        for i in range(1, n_points):
+        print(f"Arquivo {filename} não encontrado. Gerando 40 pontos aleatórios para simulação.")
+        origin = {'id': 'Origem', 'x': 0.0, 'y': 0.0, 'z': 0.0}
+        for i in range(1, 41):
             points.append({
                 'id': f"P{i}",
                 'x': random.uniform(0, 100),
@@ -38,10 +47,11 @@ def load_data(filename, n_points=40):
                 'z': random.uniform(0, 100)
             })
             
-    if len(points) > n_points:
-        points = points[:n_points]
+    if origin is None:
+        origin = {'id': 'Origem', 'x': 0.0, 'y': 0.0, 'z': 0.0}
         
-    return points
+    return [origin] + points
+
 
 def calc_distance(p1, p2):
     return math.sqrt((p1['x'] - p2['x'])**2 + (p1['y'] - p2['y'])**2 + (p1['z'] - p2['z'])**2)
@@ -54,7 +64,6 @@ class TSPGeneticAlgorithm:
         self.mutation_rate = mutation_rate
         self.elitism_size = elitism_size
         
-        # O cromossomo contém os índices da lista points (exceto a origem, índice 0)
         self.num_genes = len(points) - 1
         self.intermediate_indices = list(range(1, len(points)))
         
@@ -68,19 +77,16 @@ class TSPGeneticAlgorithm:
         
     def evaluate(self, individual):
         dist = 0.0
-        # Distância da Origem ao primeiro ponto da rota
         dist += calc_distance(self.points[0], self.points[individual.chromosome[0]])
         
-        # Distâncias intermediárias
         for i in range(len(individual.chromosome) - 1):
             p1_idx = individual.chromosome[i]
             p2_idx = individual.chromosome[i+1]
             dist += calc_distance(self.points[p1_idx], self.points[p2_idx])
             
-        # Distância do último ponto de volta para a Origem
         dist += calc_distance(self.points[individual.chromosome[-1]], self.points[0])
         
-        individual.fitness = dist # Minimização
+        individual.fitness = dist
         
     def tournament_selection(self, pop, k=3):
         competitors = random.sample(pop, k)
@@ -88,7 +94,6 @@ class TSPGeneticAlgorithm:
         return best
         
     def crossover_order(self, p1, p2):
-        # Crossover de dois pontos adaptado para permutação (Order Crossover)
         c1, c2 = sorted(random.sample(range(self.num_genes), 2))
         
         offspring_chrom = [-1] * self.num_genes
@@ -146,7 +151,6 @@ class TSPGeneticAlgorithm:
             else:
                 stagnation += 1
                 
-            # Parada antecipada por estagnação
             if stagnation >= 50:
                 break
                 
@@ -174,9 +178,7 @@ def analyse_frequentist(points, runs=30):
     print(f"Média das gerações: {sum(generations_needed)/runs:.2f}")
 
 if __name__ == "__main__":
-    # N_pontos no intervalo 30 < N < 60
-    n_pontos = 40 
-    pts = load_data("CaixeiroGrupos.csv", n_points=n_pontos)
+    pts = load_data()
     
     print(f"Total de pontos carregados: {len(pts)}")
     
@@ -190,5 +192,4 @@ if __name__ == "__main__":
     print(f"[{route_str}]")
     print(f"Custo (Distância Euclideana 3D total): {best_ind.fitness:.4f}")
     
-    # Análise Estatística / Frequentista
     analyse_frequentist(pts, runs=15)
